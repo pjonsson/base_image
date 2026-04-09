@@ -2,3 +2,7 @@
 .github
 LICENSE
 README.md
+# From https://rstudio.github.io/renv/articles/docker.html#containerizing-an-existing-renv-project
+renv/*
+!renv/activate.R
+!renv/settings.json

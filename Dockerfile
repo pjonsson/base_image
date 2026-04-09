@@ -81,7 +81,8 @@ apt-get install -y --no-install-recommends \
   # build requirement for OpenCV
   cmake \
   ninja-build \
-  python3-pip
+  python3-pip \
+  r-cran-renv
 
 # Install Python packages
 RUN --mount=type=bind,source=requirements.txt,target=requirements.txt \
@@ -93,6 +94,34 @@ RUN --mount=type=bind,source=requirements.txt,target=requirements.txt \
   echo -n "\n\n" && \
   exit 1) && \
 pip3 install --root /build_thirdparty --break-system-packages --no-cache-dir -r requirements.txt
+
+# Install R packages.
+WORKDIR /work
+RUN mkdir renv
+
+# Packages installed: rmarkdown, echarts4r, snow, snowfall, getopt
+#
+# Updating the packages in the lock file: Rscript -e 'renv::update()'
+#
+# Bootstrapping renv to generate the first renv.lock & settings:
+# Rscript -e 'renv::init(); renv::settings$snapshot.type("all")' && \
+# Rscript -e 'install.packages("package", Ncpus = parallel::detectCores(), repos="https://cloud.r-project.org"); if (!library(package, logical.return=T)) quit(save="no", status=10) && \
+# Rscript -e 'renv::snapshot()'
+
+COPY --link .Rprofile renv.lock ./
+COPY --link renv/activate.R renv/activate.R
+COPY --link renv/settings.json renv/settings.json
+
+# Ccache size set from "ccache -s -v" after built from an empty cache.
+# Other ccache settings from https://dirk.eddelbuettel.com/blog/2017/11/27/.
+RUN --mount=type=cache,id=force-base-renv,target=/root/.cache \
+export RENV_PATHS_LIBRARY=/usr/local/lib/R && \
+export RENV_CONFIG_CACHE_SYMLINKS=FALSE && \
+mkdir -p $HOME/.R $HOME/.config/ccache && \
+echo -n "CCACHE=ccache\nCC=\$(CCACHE) gcc\nCXX=\$(CCACHE) g++\nCXX11=\$(CCACHE) g++\nCXX14=\$(CCACHE) g++\nCXX17=\$(CCACHE) g++\nFC=\$(CCACHE) gfortran\nF77=\$(CCACHE) gfortran\n" > $HOME/.R/Makevars && \
+echo -n "max_size = 200M\nsloppiness = include_file_ctime\nhash_dir = false\n" > $HOME/.config/ccache/ccache.conf && \
+R -s -e 'renv::restore()' && \
+rm -rf $HOME/.R $HOME/.config/ccache
 
 # Build OpenCV from source, only include the required parts.
 RUN --mount=type=cache,id=force-base-opencv,target=/root/.cache \
@@ -134,20 +163,7 @@ FROM internal_base AS builder
 # Add login-script for UID/GID-remapping.
 COPY --chown=root:root --link remap-user.sh /usr/local/bin/remap-user.sh
 
-# Install R packages.
-# Ccache size set from "ccache -s -v" after built from an empty cache.
-# Other ccache settings from https://dirk.eddelbuettel.com/blog/2017/11/27/.
-RUN --mount=type=cache,id=force-base-r,target=/root/.cache \
-mkdir -p $HOME/.R $HOME/.config/ccache && \
-echo -n "CCACHE=ccache\nCC=\$(CCACHE) gcc\nCXX=\$(CCACHE) g++\nCXX11=\$(CCACHE) g++\nCXX14=\$(CCACHE) g++\nCXX17=\$(CCACHE) g++\nFC=\$(CCACHE) gfortran\nF77=\$(CCACHE) gfortran\n" > $HOME/.R/Makevars && \
-echo -n "max_size = 200M\nsloppiness = include_file_ctime\nhash_dir = false\n" > $HOME/.config/ccache/ccache.conf && \
-Rscript -e 'install.packages("rmarkdown", Ncpus = parallel::detectCores(), repos="https://cloud.r-project.org"); if (!library(rmarkdown, logical.return=T)) quit(save="no", status=10)' && \
-Rscript -e 'install.packages("echarts4r", Ncpus = parallel::detectCores(), repos="https://cloud.r-project.org"); if (!library(echarts4r, logical.return=T)) quit(save="no", status=10)' && \
-Rscript -e 'install.packages("snow", Ncpus = parallel::detectCores(), repos="https://cloud.r-project.org"); if (!library(snow, logical.return=T)) quit(save="no", status=10)' && \
-Rscript -e 'install.packages("snowfall", Ncpus = parallel::detectCores(), repos="https://cloud.r-project.org"); if (!library(snowfall, logical.return=T)) quit(save="no", status=10)' && \
-Rscript -e 'install.packages("getopt", Ncpus = parallel::detectCores(), repos="https://cloud.r-project.org"); if (!library(getopt, logical.return=T)) quit(save="no", status=10)' && \
-rm -rf $HOME/.R $HOME/.config/ccache
-
+COPY --from=opencv_builder --link  /usr/local/lib/R/R-4.3/* /usr/local/lib/R/site-library/
 COPY --from=opencv_builder --link  /build_thirdparty/usr/ /usr/
 
 # De-sudo this image

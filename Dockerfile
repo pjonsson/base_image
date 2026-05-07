@@ -9,7 +9,7 @@
 
 # Run "docker buildx imagetools inspect ghcr.io/osgeo/gdal:ubuntu-small-3.11.3"
 # to get the sha256 of the manifest list so image is multi-arch.
-FROM ghcr.io/osgeo/gdal:ubuntu-small-3.11.3@sha256:a7c6f68b9868420861be6dd51873ac464fc587ae3b6206b546408d67d697328e AS internal_base
+FROM ghcr.io/osgeo/gdal:ubuntu-small-3.13.0@sha256:e0fedbcc5b51bd12617d6a6cf8b7c3244d98cbd29b266925fd9061f40081b351 AS internal_base
 
 # Keep deb packages in Docker cache and increase the number of retries
 # when downloading the packages.

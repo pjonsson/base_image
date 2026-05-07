@@ -9,7 +9,7 @@
 name = "force-base-image-installation"
 version = "0.2.0"
 description = "Installation project for force-base-image-installation"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
   # Required by OpenCV.
   "numpy",
@@ -26,7 +26,7 @@ dependencies = [
 [dependency-groups]
 force = [
   # GDAL version must match the FROM line in Dockerfile.
-  "gdal==3.11.3",
+  "gdal==3.13.0",
   # Some python3-packages from Ubuntu are installed, keep those versions.
-  "numpy==1.26.4",
+  "numpy==2.3.5",
 ]

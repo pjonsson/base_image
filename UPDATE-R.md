@@ -21,13 +21,16 @@ docker build -t gdal-r-update - <<'EOF'
 FROM ghcr.io/osgeo/gdal:ubuntu-small-3.11.3
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
     apt-get install -y --no-install-recommends \
-      r-base        \
-      r-cran-renv   \
-      gfortran      \
-      libblas-dev   \
-      liblapack-dev \
-      libuv1-dev    \
-      pandoc
+      build-essential \
+      curl            \
+      r-base          \
+      r-cran-renv     \
+      gfortran        \
+      libblas-dev     \
+      liblapack-dev   \
+      libuv1-dev      \
+      pandoc          \
+      zlib1g-dev
 EOF
 ```
 
@@ -62,6 +65,8 @@ Rscript -e 'renv::restore()'
 
 This installs all packages at the versions currently recorded in `renv.lock`.
 It is required before updating so that renv knows what is installed.
+
+Use `Rscript -e 'options(Ncpus = parallel::detectCores()); renv::restore()` to get some speedup by building the individual packages in parallel.
 
 ---
 

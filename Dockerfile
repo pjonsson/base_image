@@ -25,24 +25,18 @@ export DEBIAN_FRONTEND=noninteractive && \
 apt-get -y update && apt-get -y upgrade && \
 # Install required tools.
 apt-get -y install --no-install-recommends \
-  # speed up building, only effective for local builds
-  ccache \
-  # GCC compiler etc.
-  build-essential \
-  # build requirement for OpenCV/FORCE
-  pkgconf \
   # switching UID/GID inside container (for permissions)
   gosu \
   # Required by nlme \
   libblas3 \
   # Numerical library, dynamically linked in FORCE
-  libgsl0-dev \
+  libgsl27 \
   # JSON parsing, dynamically linked in FORCE
-  libjansson-dev \
+  libjansson4 \
   # Required by nlme
   liblapack3 \
-  # build requirement for Rmarkdown
-  libuv1-dev \
+  # requirement for Rmarkdown
+  libuv1t64 \
   # file locking, used in FORCE's bash scripts
   lockfile-progs \
   # file renaming, used in FORCE's bash scripts
@@ -51,7 +45,7 @@ apt-get -y install --no-install-recommends \
   # safeguard for Windows EOL files, used in FORCE's bash scripts
   dos2unix \
   # force-higher-level UDFs, dynamically linked in FORCE
-  python3-dev \
+  python3 \
   # not sure if still necessary
   python-is-python3 \
   # format conversion, required by Rmarkdown
@@ -81,6 +75,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 export DEBIAN_FRONTEND=noninteractive && \
 apt-get -y update && apt-get -y upgrade && \
 apt-get install -y --no-install-recommends \
+  # GCC compiler etc.
+  build-essential \
+  # speed up building, only effective for local builds
   ccache \
   # build requirement for OpenCV
   cmake \
@@ -90,9 +87,14 @@ apt-get install -y --no-install-recommends \
   libblas-dev \
   # build requirement for nlme
   liblapack-dev \
+  # build requirement for Rmarkdown
+  libuv1-dev \
   ninja-build \
+  # build requirement for OpenCV/FORCE
+  pkgconf \
   python3-pip \
-  r-cran-renv
+  r-cran-renv \
+  zlib1g-dev
 
 # Install Python packages
 RUN --mount=type=bind,source=requirements.txt,target=requirements.txt \
